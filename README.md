@@ -4,8 +4,9 @@
 Item-based Collaborative Filtering for Anime Recommendations
 
 ## Overview
+
 This project builds a recommender system that suggests anime titles similar to a selected anime using explicit user ratings from the MyAnimeList Kaggle dataset. The goal is to create a practical, interpretable recommendation baseline that works well with real rating data and is easy to understand, evaluate, and extend.
----
+
 
 ## Why this project exists
 The model is intentionally designed as a strong and clear baseline rather than a highly complex production system. This keeps the project realistic for a short timeline while still producing a working recommendation engine that can be evaluated using standard ranking metrics.
