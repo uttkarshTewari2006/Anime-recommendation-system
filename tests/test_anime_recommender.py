@@ -15,6 +15,7 @@ from anime_recommender import (
     split_user_holdout,
 )
 from run_evaluation import split_validation_test
+from run_catalog_size_evaluation import apply_fixed_targets
 from run_protocol1_evaluation import evaluate_seed_target_pairs, make_seed_target_pairs
 
 
@@ -188,6 +189,50 @@ class AnimeRecommenderTests(unittest.TestCase):
 
         self.assertEqual(len(pairs), 2)
         self.assertEqual(scored["cf_recall_at_k"].tolist(), [1, 1])
+
+    def test_fixed_catalog_targets_recreate_same_split(self):
+        ratings = self.ratings.copy()
+        target = ratings[(ratings["user_id"] == "u1") & (ratings["anime_id"] == 3)].copy()
+        target.loc[:, "rating"] = 8
+        ratings.loc[target.index, "rating"] = 8
+        seed_target_pairs = pd.DataFrame(
+            {"user_id": ["u1", "u1"], "target_id": [3, 3]}
+        )
+
+        train, test = apply_fixed_targets(ratings, seed_target_pairs)
+
+        self.assertEqual(len(test), 1)
+        self.assertEqual(test.iloc[0]["anime_id"], 3)
+        self.assertFalse(((train["user_id"] == "u1") & (train["anime_id"] == 3)).any())
+
+    def test_popularity_pair_rank_accounts_for_all_seen_titles(self):
+        catalog = pd.DataFrame(
+            {"anime_id": [1, 2, 3, 4], "title": ["Alpha", "Beta", "Gamma", "Delta"]}
+        )
+        train = pd.DataFrame(
+            [
+                ("u1", 1, 10, "Alpha"), ("u1", 2, 9, "Beta"),
+                ("u2", 3, 10, "Gamma"), ("u3", 3, 9, "Gamma"), ("u4", 3, 8, "Gamma"),
+            ],
+            columns=["user_id", "anime_id", "rating", "title"],
+        )
+        model = build_similarity_model(train, catalog)
+        model.similarities = csr_matrix(
+            [
+                [1.0, 0.0, 0.8, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.8, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+        pairs = pd.DataFrame(
+            [{"user_id": "u1", "target_id": 3, "target_title": "Gamma", "seed_id": 1, "seed_title": "Alpha", "seed_number": 1}]
+        )
+
+        scored = evaluate_seed_target_pairs(model, train, pairs, k=1)
+
+        self.assertEqual(scored.iloc[0]["cf_rank"], 1)
+        self.assertEqual(scored.iloc[0]["popularity_rank"], 1)
 
 
 if __name__ == "__main__":

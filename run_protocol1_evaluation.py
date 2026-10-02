@@ -109,16 +109,39 @@ def evaluate_seed_target_pairs(
         .index.astype(int)
         .tolist()
     )
+    popularity_positions = {
+        anime_id: position for position, anime_id in enumerate(popular_ids, start=1)
+    }
     popularity_ranks: dict[Any, int | None] = {}
     for user_id, user_pairs in pairs.groupby("user_id", sort=False):
         row_index = user_to_row[user_id]
         start = model.user_item_matrix.indptr[row_index]
         stop = model.user_item_matrix.indptr[row_index + 1]
-        seen_ids = {model.anime_ids[index] for index in model.user_item_matrix.indices[start:stop]}
-        ranked = [anime_id for anime_id in popular_ids if anime_id not in seen_ids][:k]
-        ranked_positions = {anime_id: rank for rank, anime_id in enumerate(ranked, start=1)}
+        seen_indices = model.user_item_matrix.indices[start:stop]
+        seen_popularity_positions = np.fromiter(
+            (
+                popularity_positions[model.anime_ids[index]]
+                for index in seen_indices
+                if model.anime_ids[index] in popularity_positions
+            ),
+            dtype=np.int32,
+        )
+        seen_popularity_positions.sort()
         for target_id in user_pairs["target_id"].unique():
-            popularity_ranks[(user_id, int(target_id))] = ranked_positions.get(int(target_id))
+            target_position = popularity_positions.get(int(target_id))
+            if target_position is None:
+                popularity_ranks[(user_id, int(target_id))] = None
+                continue
+            excluded_before = np.searchsorted(
+                seen_popularity_positions, target_position, side="left"
+            )
+            excluded_target = np.searchsorted(
+                seen_popularity_positions, target_position, side="right"
+            ) > excluded_before
+            rank = target_position - int(excluded_before)
+            popularity_ranks[(user_id, int(target_id))] = (
+                rank if not excluded_target and rank <= k else None
+            )
 
     pair_rows: list[dict[str, Any]] = []
     batch_size = 512
