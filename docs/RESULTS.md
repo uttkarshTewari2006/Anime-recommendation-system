@@ -43,3 +43,23 @@ At 5,000 titles, the paired item-CF minus popularity differences were +0.008784 
 **Observed tradeoff:** Item-CF Recall@10 decreased by 0.008891 and NDCG@10 by 0.005872 versus the 750-title run, while the model still outperformed popularity. The 5,000 x 5,000 similarity matrix was 97.3012% dense and its CSR arrays used 291.9 MB; the user-item CSR used 74.7 MB. Model build took 6.5 seconds and pair evaluation/bootstrap took 19.4 seconds on this machine.
 
 **Artifacts:** `results/catalog5000_metrics.csv`, `results/catalog5000_paired_deltas.csv`, `results/catalog5000_seed_target_pairs.csv`, `results/catalog5000_user_metrics.csv`, and `results/catalog5000_summary.md`.
+
+## 2026-10-02 - Item 3a Rating-Habit Bias
+
+**Status:** Complete. Adjusted cosine did not improve the ranking.
+
+**Planned controlled comparison:** At the approved 5,000-title catalog, compare raw cosine with user-mean-centered adjusted cosine on the exact item-1 seed-target pairs. Keep popularity as a reference, use the same seen-title exclusions and bootstrap (seed 31415, 2,000 resamples), and report Recall@10/NDCG@10. Eight fixed titles will receive side-by-side top-10 neighbor lists for visual inspection.
+
+**Configuration:** 5,000 most-rated titles, minimum 20 valid ratings; exact item-1 split, targets, seed pairs, and all-seen exclusion; 65,179 users and 127,922 pairs; holdout seed 42, pair-sampling seed 2026; user-level paired bootstrap, 2,000 resamples, seed 31415. Adjusted cosine subtracts each user's mean observed training rating before computing item similarities.
+
+| Model | Recall@10 | 95% CI | NDCG@10 | 95% CI |
+|---|---:|---:|---:|---:|
+| Raw cosine | 0.148476 | [0.146458, 0.150624] | 0.087712 | [0.086255, 0.089138] |
+| Adjusted cosine | 0.109314 | [0.107542, 0.111117] | 0.067506 | [0.066254, 0.068882] |
+| Popularity | 0.139692 | [0.137130, 0.142423] | 0.075972 | [0.074410, 0.077604] |
+
+Adjusted-minus-raw paired differences: Recall@10 -0.039161 (95% CI -0.040819 to -0.037474); NDCG@10 -0.020206 (-0.021078 to -0.019330). The change is a regression, so raw cosine remains the default. Raw model plus pair evaluation took 20.0 seconds; adjusted model plus pair evaluation took 20.2 seconds.
+
+**Fixed seed titles and top-10 visual check:** Fullmetal Alchemist: Brotherhood, Naruto, Death Note, Sword Art Online, Neon Genesis Evangelion, Clannad, Highschool of the Dead, and Trigun. Side-by-side raw/adjusted results are in `results/rating_bias_neighbors.md` (also available as `results/rating_bias_neighbors.csv`).
+
+**Artifacts:** `results/rating_bias_metrics.csv`, `results/rating_bias_deltas.csv`, `results/rating_bias_pair_details.csv`, `results/rating_bias_user_metrics.csv`, `results/rating_bias_neighbors.csv`, `results/rating_bias_neighbors.md`, and `results/rating_bias_summary.md`.

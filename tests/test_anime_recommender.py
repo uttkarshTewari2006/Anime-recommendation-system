@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 
@@ -67,6 +68,35 @@ class AnimeRecommenderTests(unittest.TestCase):
         model = build_similarity_model(self.ratings)
 
         self.assertIsNotNone(model.genre_similarities)
+
+    def test_adjusted_cosine_is_invariant_to_user_rating_offsets(self):
+        ratings = self.ratings.copy()
+        adjusted_ratings = ratings.copy()
+        offsets = {"u1": 5.0, "u2": -2.0, "u3": 3.0, "u4": -4.0}
+        adjusted_ratings["rating"] += adjusted_ratings["user_id"].map(offsets)
+
+        original = build_similarity_model(
+            ratings, self.catalog, similarity_method="adjusted_cosine"
+        )
+        offset = build_similarity_model(
+            adjusted_ratings, self.catalog, similarity_method="adjusted_cosine"
+        )
+        raw_original = build_similarity_model(ratings, self.catalog)
+        raw_offset = build_similarity_model(adjusted_ratings, self.catalog)
+
+        self.assertTrue(
+            np.allclose(
+                original.similarities.toarray(),
+                offset.similarities.toarray(),
+                rtol=1e-12,
+                atol=1e-12,
+            )
+        )
+        self.assertFalse(
+            np.allclose(
+                raw_original.similarities.toarray(), raw_offset.similarities.toarray()
+            )
+        )
 
     def test_history_recommendations_sum_similarities_and_exclude_seen_items(self):
         model = build_similarity_model(self.ratings, self.catalog)

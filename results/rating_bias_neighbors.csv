@@ -1,0 +1,161 @@
+model,seed_title,rank,neighbor_title,similarity
+raw_cosine,Fullmetal Alchemist: Brotherhood,1,Fullmetal Alchemist,0.5704374007954613
+raw_cosine,Fullmetal Alchemist: Brotherhood,2,Death Note,0.5608166771723229
+raw_cosine,Fullmetal Alchemist: Brotherhood,3,Shingeki no Kyojin,0.5532857621020959
+raw_cosine,Fullmetal Alchemist: Brotherhood,4,Code Geass: Hangyaku no Lelouch,0.5506542245887568
+raw_cosine,Fullmetal Alchemist: Brotherhood,5,Code Geass: Hangyaku no Lelouch R2,0.5458950799708301
+raw_cosine,Fullmetal Alchemist: Brotherhood,6,Steins;Gate,0.5312510600795809
+raw_cosine,Fullmetal Alchemist: Brotherhood,7,Sword Art Online,0.5241002742249395
+raw_cosine,Fullmetal Alchemist: Brotherhood,8,Angel Beats!,0.5030566935010843
+raw_cosine,Fullmetal Alchemist: Brotherhood,9,Tengen Toppa Gurren Lagann,0.49307505547028485
+raw_cosine,Fullmetal Alchemist: Brotherhood,10,Ao no Exorcist,0.4924890864852638
+raw_cosine,Naruto,1,Death Note,0.5463990229254209
+raw_cosine,Naruto,2,Fullmetal Alchemist,0.47536756685025744
+raw_cosine,Naruto,3,Bleach,0.4692733084073193
+raw_cosine,Naruto,4,Code Geass: Hangyaku no Lelouch,0.468738738443859
+raw_cosine,Naruto,5,Fullmetal Alchemist: Brotherhood,0.4685500945294013
+raw_cosine,Naruto,6,Sword Art Online,0.46845634956092014
+raw_cosine,Naruto,7,Shingeki no Kyojin,0.46110145632464394
+raw_cosine,Naruto,8,Dragon Ball Z,0.4529231638634991
+raw_cosine,Naruto,9,Naruto Movie 1: Dai Katsugeki!! Yuki Hime Shinobu Houjou Dattebayo!,0.4502319051854789
+raw_cosine,Naruto,10,Ao no Exorcist,0.4497727825399654
+raw_cosine,Death Note,1,Code Geass: Hangyaku no Lelouch,0.6132963312292767
+raw_cosine,Death Note,2,Code Geass: Hangyaku no Lelouch R2,0.586877719205183
+raw_cosine,Death Note,3,Elfen Lied,0.5769810406739663
+raw_cosine,Death Note,4,Shingeki no Kyojin,0.5695312789244558
+raw_cosine,Death Note,5,Fullmetal Alchemist: Brotherhood,0.5608166771723229
+raw_cosine,Death Note,6,Naruto,0.5463990229254209
+raw_cosine,Death Note,7,Fullmetal Alchemist,0.54531755643917
+raw_cosine,Death Note,8,Sword Art Online,0.5363206870546561
+raw_cosine,Death Note,9,Angel Beats!,0.518029456345515
+raw_cosine,Death Note,10,Mirai Nikki (TV),0.5160533632897885
+raw_cosine,Sword Art Online,1,Shingeki no Kyojin,0.6665349620910829
+raw_cosine,Sword Art Online,2,Sword Art Online II,0.6448881753585913
+raw_cosine,Sword Art Online,3,No Game No Life,0.6198800038249425
+raw_cosine,Sword Art Online,4,Mirai Nikki (TV),0.6074266133804489
+raw_cosine,Sword Art Online,5,Angel Beats!,0.6047728156011347
+raw_cosine,Sword Art Online,6,Highschool of the Dead,0.5641389189316453
+raw_cosine,Sword Art Online,7,Ao no Exorcist,0.5633088442931043
+raw_cosine,Sword Art Online,8,Guilty Crown,0.5570237245172944
+raw_cosine,Sword Art Online,9,Tokyo Ghoul,0.5549252942248009
+raw_cosine,Sword Art Online,10,High School DxD,0.54184840972029
+raw_cosine,Neon Genesis Evangelion,1,Neon Genesis Evangelion: The End of Evangelion,0.7318056259777963
+raw_cosine,Neon Genesis Evangelion,2,Evangelion: 1.0 You Are (Not) Alone,0.5818095954718601
+raw_cosine,Neon Genesis Evangelion,3,Evangelion: 2.0 You Can (Not) Advance,0.5489535787122235
+raw_cosine,Neon Genesis Evangelion,4,Neon Genesis Evangelion: Death &amp; Rebirth,0.5264400474506494
+raw_cosine,Neon Genesis Evangelion,5,Cowboy Bebop,0.49798086066897557
+raw_cosine,Neon Genesis Evangelion,6,Tengen Toppa Gurren Lagann,0.4914566414037879
+raw_cosine,Neon Genesis Evangelion,7,FLCL,0.47542952575935865
+raw_cosine,Neon Genesis Evangelion,8,Suzumiya Haruhi no Yuuutsu,0.4600697033419567
+raw_cosine,Neon Genesis Evangelion,9,Code Geass: Hangyaku no Lelouch,0.4588522732401366
+raw_cosine,Neon Genesis Evangelion,10,Akira,0.4483438168377884
+raw_cosine,Clannad,1,Clannad: After Story,0.8598479374012172
+raw_cosine,Clannad,2,"Clannad: Mou Hitotsu no Sekai, Tomoyo-hen",0.6331943029751236
+raw_cosine,Clannad,3,"Clannad: After Story - Mou Hitotsu no Sekai, Kyou-hen",0.5841240244995576
+raw_cosine,Clannad,4,Angel Beats!,0.5817732013064913
+raw_cosine,Clannad,5,Toradora!,0.5727712521515075
+raw_cosine,Clannad,6,Suzumiya Haruhi no Yuuutsu,0.5090590623350042
+raw_cosine,Clannad,7,Kanon (2006),0.5079157555491286
+raw_cosine,Clannad,8,Code Geass: Hangyaku no Lelouch,0.4965624927063931
+raw_cosine,Clannad,9,Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.,0.49448971103329153
+raw_cosine,Clannad,10,Code Geass: Hangyaku no Lelouch R2,0.48705716688145795
+raw_cosine,Highschool of the Dead,1,Sword Art Online,0.5641389189316453
+raw_cosine,Highschool of the Dead,2,Angel Beats!,0.5612009353790993
+raw_cosine,Highschool of the Dead,3,High School DxD,0.5589934661034769
+raw_cosine,Highschool of the Dead,4,Highschool of the Dead: Drifters of the Dead,0.5527280828199692
+raw_cosine,Highschool of the Dead,5,Mirai Nikki (TV),0.5353083300645028
+raw_cosine,Highschool of the Dead,6,Deadman Wonderland,0.5205834953086483
+raw_cosine,Highschool of the Dead,7,Elfen Lied,0.5180219844007207
+raw_cosine,Highschool of the Dead,8,Shingeki no Kyojin,0.516142635637589
+raw_cosine,Highschool of the Dead,9,Death Note,0.5117764153845215
+raw_cosine,Highschool of the Dead,10,Kore wa Zombie Desu ka?,0.5049803918678896
+raw_cosine,Trigun,1,Cowboy Bebop,0.5282760781547471
+raw_cosine,Trigun,2,Trigun: Badlands Rumble,0.4839091069373592
+raw_cosine,Trigun,3,Samurai Champloo,0.4630088604364396
+raw_cosine,Trigun,4,FLCL,0.4273594496559642
+raw_cosine,Trigun,5,Fullmetal Alchemist,0.4222710214680329
+raw_cosine,Trigun,6,Cowboy Bebop: Tengoku no Tobira,0.4119980063460562
+raw_cosine,Trigun,7,Black Lagoon,0.40540814041951506
+raw_cosine,Trigun,8,Neon Genesis Evangelion,0.4037703815882924
+raw_cosine,Trigun,9,Hellsing,0.4035425060236497
+raw_cosine,Trigun,10,Full Metal Panic!,0.39908219536875333
+adjusted_cosine,Fullmetal Alchemist: Brotherhood,1,Steins;Gate,0.4605924883672078
+adjusted_cosine,Fullmetal Alchemist: Brotherhood,2,Code Geass: Hangyaku no Lelouch R2,0.41687144384769953
+adjusted_cosine,Fullmetal Alchemist: Brotherhood,3,Code Geass: Hangyaku no Lelouch,0.40926201063319523
+adjusted_cosine,Fullmetal Alchemist: Brotherhood,4,Fate/Zero 2nd Season,0.3690195155270032
+adjusted_cosine,Fullmetal Alchemist: Brotherhood,5,Hunter x Hunter (2011),0.3687213142208013
+adjusted_cosine,Fullmetal Alchemist: Brotherhood,6,Death Note,0.3649684708906046
+adjusted_cosine,Fullmetal Alchemist: Brotherhood,7,Tengen Toppa Gurren Lagann,0.36207515009343294
+adjusted_cosine,Fullmetal Alchemist: Brotherhood,8,Fate/Zero,0.3464125688871732
+adjusted_cosine,Fullmetal Alchemist: Brotherhood,9,One Punch Man,0.3440104655290608
+adjusted_cosine,Fullmetal Alchemist: Brotherhood,10,Clannad: After Story,0.3272112249180468
+adjusted_cosine,Naruto,1,Bleach,0.16875913309374527
+adjusted_cosine,Naruto,2,Naruto: Shippuuden Movie 1,0.11604493359912087
+adjusted_cosine,Naruto,3,Naruto Movie 1: Dai Katsugeki!! Yuki Hime Shinobu Houjou Dattebayo!,0.11156448587073729
+adjusted_cosine,Naruto,4,Dragon Ball Z,0.09503559733024822
+adjusted_cosine,Naruto,5,Naruto: Shippuuden Movie 6 - Road to Ninja,0.09392574940512219
+adjusted_cosine,Naruto,6,Naruto: Shippuuden Movie 2 - Kizuna,0.08868951606498825
+adjusted_cosine,Naruto,7,Fairy Tail,0.08647902130534715
+adjusted_cosine,Naruto,8,Naruto: Shippuuden Movie 3 - Hi no Ishi wo Tsugu Mono,0.08590127668701143
+adjusted_cosine,Naruto,9,Dragon Ball,0.08084273757211796
+adjusted_cosine,Naruto,10,Dragon Ball GT,0.07915607783500526
+adjusted_cosine,Death Note,1,Code Geass: Hangyaku no Lelouch,0.3935336925248533
+adjusted_cosine,Death Note,2,Code Geass: Hangyaku no Lelouch R2,0.3906557081461919
+adjusted_cosine,Death Note,3,Fullmetal Alchemist: Brotherhood,0.3649684708906046
+adjusted_cosine,Death Note,4,Steins;Gate,0.32150307930423105
+adjusted_cosine,Death Note,5,Shingeki no Kyojin,0.31172054583778475
+adjusted_cosine,Death Note,6,Clannad: After Story,0.2488996318894337
+adjusted_cosine,Death Note,7,Fate/Zero 2nd Season,0.23166370066278674
+adjusted_cosine,Death Note,8,Kiseijuu: Sei no Kakuritsu,0.23138633740165282
+adjusted_cosine,Death Note,9,Tengen Toppa Gurren Lagann,0.23124871159053678
+adjusted_cosine,Death Note,10,One Punch Man,0.23084078023464172
+adjusted_cosine,Sword Art Online,1,Sword Art Online II,0.2854128423374785
+adjusted_cosine,Sword Art Online,2,Fairy Tail,0.18462470344451226
+adjusted_cosine,Sword Art Online,3,Mirai Nikki (TV),0.1783988804692764
+adjusted_cosine,Sword Art Online,4,Guilty Crown,0.16951994671443316
+adjusted_cosine,Sword Art Online,5,Akame ga Kill!,0.16850324866078753
+adjusted_cosine,Sword Art Online,6,No Game No Life,0.1593611328483822
+adjusted_cosine,Sword Art Online,7,Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka,0.15395482227090607
+adjusted_cosine,Sword Art Online,8,Shingeki no Kyojin,0.13946919329486968
+adjusted_cosine,Sword Art Online,9,Highschool of the Dead,0.13443481562932424
+adjusted_cosine,Sword Art Online,10,Charlotte,0.13238208409871144
+adjusted_cosine,Neon Genesis Evangelion,1,Neon Genesis Evangelion: The End of Evangelion,0.5587482280172532
+adjusted_cosine,Neon Genesis Evangelion,2,Evangelion: 1.0 You Are (Not) Alone,0.35042553357841405
+adjusted_cosine,Neon Genesis Evangelion,3,Evangelion: 2.0 You Can (Not) Advance,0.33331241561162883
+adjusted_cosine,Neon Genesis Evangelion,4,Cowboy Bebop,0.22649530984798855
+adjusted_cosine,Neon Genesis Evangelion,5,Ghost in the Shell,0.199104768552432
+adjusted_cosine,Neon Genesis Evangelion,6,Tengen Toppa Gurren Lagann,0.1865294533602976
+adjusted_cosine,Neon Genesis Evangelion,7,Akira,0.17532776865150917
+adjusted_cosine,Neon Genesis Evangelion,8,Serial Experiments Lain,0.1732920829878976
+adjusted_cosine,Neon Genesis Evangelion,9,Mononoke Hime,0.16956996440079414
+adjusted_cosine,Neon Genesis Evangelion,10,Mahou Shoujo Madoka★Magica,0.16813369036209166
+adjusted_cosine,Clannad,1,Clannad: After Story,0.6225609998288874
+adjusted_cosine,Clannad,2,"Clannad: Mou Hitotsu no Sekai, Tomoyo-hen",0.2951056918210042
+adjusted_cosine,Clannad,3,Kanon (2006),0.2822909651014793
+adjusted_cosine,Clannad,4,"Clannad: After Story - Mou Hitotsu no Sekai, Kyou-hen",0.2558458680222246
+adjusted_cosine,Clannad,5,Angel Beats!,0.24307433757603522
+adjusted_cosine,Clannad,6,Toradora!,0.2309557498821068
+adjusted_cosine,Clannad,7,Suzumiya Haruhi no Shoushitsu,0.21181128718147701
+adjusted_cosine,Clannad,8,Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.,0.20941345788770757
+adjusted_cosine,Clannad,9,Steins;Gate,0.20756550018826528
+adjusted_cosine,Clannad,10,Code Geass: Hangyaku no Lelouch R2,0.20736437580392414
+adjusted_cosine,Highschool of the Dead,1,Highschool of the Dead: Drifters of the Dead,0.20355325146870035
+adjusted_cosine,Highschool of the Dead,2,High School DxD,0.13781128330770473
+adjusted_cosine,Highschool of the Dead,3,Sword Art Online,0.13443481562932424
+adjusted_cosine,Highschool of the Dead,4,Deadman Wonderland,0.11762147411057819
+adjusted_cosine,Highschool of the Dead,5,Btooom!,0.10260354359100692
+adjusted_cosine,Highschool of the Dead,6,Rosario to Vampire,0.09822717901530267
+adjusted_cosine,Highschool of the Dead,7,IS: Infinite Stratos,0.09500395943047793
+adjusted_cosine,Highschool of the Dead,8,Sword Art Online II,0.08620830184437143
+adjusted_cosine,Highschool of the Dead,9,Elfen Lied,0.08509154967477148
+adjusted_cosine,Highschool of the Dead,10,Ichiban Ushiro no Daimaou,0.08164314522024049
+adjusted_cosine,Trigun,1,Trigun: Badlands Rumble,0.2894529298123628
+adjusted_cosine,Trigun,2,Cowboy Bebop,0.2852246882809254
+adjusted_cosine,Trigun,3,Samurai Champloo,0.20023804833238576
+adjusted_cosine,Trigun,4,Cowboy Bebop: Tengoku no Tobira,0.19408802736438746
+adjusted_cosine,Trigun,5,Great Teacher Onizuka,0.19050927094713313
+adjusted_cosine,Trigun,6,Tengen Toppa Gurren Lagann,0.17828756835864376
+adjusted_cosine,Trigun,7,Fullmetal Alchemist: Brotherhood,0.17101687846990205
+adjusted_cosine,Trigun,8,Black Lagoon: The Second Barrage,0.1689562579339545
+adjusted_cosine,Trigun,9,Black Lagoon,0.16433940545050285
+adjusted_cosine,Trigun,10,Mononoke Hime,0.16411651128505417

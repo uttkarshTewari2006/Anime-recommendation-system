@@ -27,3 +27,15 @@
 **Execution result:** 5,000-title item cosine Recall@10 0.148476 (95% CI 0.146458-0.150624) / NDCG@10 0.087712 (0.086255-0.089138); popularity 0.139692 (0.136961-0.142408) / 0.075972 (0.074333-0.077629). The item-CF metrics declined versus item 1's 750-title run despite the larger catalog; exact fixed pairs and the measured resource use are in `RESULTS.md`.
 
 **Comparison control:** Reuse the exact item-1 65,179 users, held-out targets, and sampled seeds. Expand only catalog/training coverage to the top 5,000; keep relevance, seed-target pair averaging, all-seen exclusion, model, and metrics unchanged.
+
+## 2026-10-02 - Item 3a Rating-Habit Bias
+
+**Status:** Complete. The user approved adjusted cosine.
+
+**Method:** Compare raw cosine with adjusted cosine, where each observed training rating is centered by that user's mean rating over the training catalog. Keep the 5,000-title catalog, fixed item-1 users/targets/seeds, candidate exclusion, K=10 metrics, and paired bootstrap unchanged. Popularity remains a reference baseline.
+
+**Why:** User-mean centering directly tests whether rating-scale habits (lenient/strict users) distort item similarity. Pearson item correlation is an alternative but introduces pair-specific co-rater centering and is not included in this controlled run.
+
+**Fixed recommendation sanity-check titles:** Fullmetal Alchemist: Brotherhood; Naruto; Death Note; Sword Art Online; Neon Genesis Evangelion; Clannad; Highschool of the Dead; Trigun. Compare raw versus adjusted top-10 neighbors for every title.
+
+**Execution result:** Adjusted cosine underperformed raw cosine on both held-out metrics. Keep raw cosine as the default; do not promote adjusted cosine. Exact metrics, intervals, and the 8-title neighbor review are in `RESULTS.md` and `results/rating_bias_neighbors.md`.

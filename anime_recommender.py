@@ -123,10 +123,14 @@ def split_user_holdout(
 def build_similarity_model(
     train_ratings: pd.DataFrame,
     catalog: pd.DataFrame | None = None,
+    *,
+    similarity_method: str = "raw_cosine",
 ) -> ItemSimilarityModel:
-    """Build sparse item-item cosine similarities from explicit ratings."""
+    """Build item cosine similarities, optionally centering each user's ratings."""
     if train_ratings.empty:
         raise ValueError("train_ratings must contain at least one interaction")
+    if similarity_method not in {"raw_cosine", "adjusted_cosine"}:
+        raise ValueError("similarity_method must be 'raw_cosine' or 'adjusted_cosine'")
 
     if catalog is None:
         catalog_columns = ["anime_id", "title"]
@@ -148,7 +152,17 @@ def build_similarity_model(
         (known_ratings["rating"].astype(float), (user_codes, item_codes)),
         shape=(len(pd.unique(known_ratings["user_id"])), len(anime_ids)),
     )
-    item_user = user_item.T.tocsr()
+    if similarity_method == "adjusted_cosine":
+        user_means = known_ratings.groupby("user_id", sort=False)["rating"].transform("mean")
+        centered_ratings = known_ratings["rating"].astype(float) - user_means.astype(float)
+        similarity_user_item = csr_matrix(
+            (centered_ratings.to_numpy(), (user_codes, item_codes)),
+            shape=user_item.shape,
+        )
+        similarity_user_item.eliminate_zeros()
+    else:
+        similarity_user_item = user_item
+    item_user = similarity_user_item.T.tocsr()
     similarities = csr_matrix(cosine_similarity(item_user, dense_output=False))
 
     genre_similarities = None
