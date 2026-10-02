@@ -120,6 +120,6 @@ Open and run `notebooks/anime_item_cf.ipynb` from top to bottom. It creates a re
 
 The evaluation has one relevant held-out anime per user, so Recall@K is whether that anime appears in the top K and NDCG@K rewards placing it nearer the top. The split is randomized rather than temporal because the common Kaggle ratings file has no timestamp. Similarity uses raw explicit ratings; it does not correct for individual rating-scale bias. The item cap and minimum-count filter also limit coverage to popular titles, so cold-start anime are not recommended.
 
-### Initial measured results
+### Evaluation status
 
-The first run on Kaggle dataset version 1 used 4,097,576 cleaned ratings across 750 anime and evaluated 65,444 positive user holdouts. Item cosine achieved Recall@10 of `0.117337` and NDCG@10 of `0.066312`; a popularity-only baseline on the same holdouts scored `0.107527` and `0.054898`. The gain is modest. The current evaluation picks the first retained training item as the seed and checks whether it retrieves another item the user rated at least 7, so an unrelated seed can make recall look low. See `results/baseline_summary.md` for details and limitations.
+Quantitative results are omitted until the relevance baseline and evaluation protocol are refined.
