@@ -1,1 +1,9 @@
 .agent/
+data/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+results/*.npz
+results/cleaned_ratings.csv.gz
+results/baseline_user_rankings.csv
+results/baseline_popularity_user_rankings.csv

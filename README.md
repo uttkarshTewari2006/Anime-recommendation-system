@@ -86,3 +86,40 @@ By the end of the project, the system should be able to:
 - provide a clear baseline that can be improved later.
 
 This project is designed to be understandable, reproducible, and practical for a short sprint while still behaving like a legitimate recommendation system.
+
+## Day 2 baseline
+
+The baseline implementation is in `anime_recommender.py`, with an experiment workflow in `notebooks/anime_item_cf.ipynb`.
+
+### Dataset setup
+
+Install the dependencies, then download the MyAnimeList anime ratings dataset with KaggleHub:
+
+```powershell
+py -m pip install -r requirements.txt
+py -c "import kagglehub; path = kagglehub.dataset_download('CooperUnion/anime-recommendations-database'); print('Path to dataset files:', path)"
+```
+
+Copy these downloaded files into the project `data/` folder:
+
+- `anime.csv` with `anime_id` and `name` (or `title`); `genre` and `synopsis` are optional metadata.
+- `rating.csv` with `user_id`, `anime_id`, and `rating`.
+
+Ratings outside 1-10, including MyAnimeList's `-1` unrated marker, are removed. Duplicate user-anime ratings are averaged. The default run keeps at most the 750 most-rated anime with at least 20 valid ratings each; adjust the notebook's `MAX_ITEMS` and `MIN_ITEM_RATINGS` values to change that working subset. Raw dataset files are ignored by Git.
+
+### Run
+
+Run the focused tests:
+
+```powershell
+py -m pip install -r requirements.txt
+py -m unittest discover -s tests -v
+```
+
+Open and run `notebooks/anime_item_cf.ipynb` from top to bottom. It creates a reproducible user-aware holdout by selecting one rating of at least 7 per eligible user, computes sparse item-item cosine similarity, reports Recall@K and NDCG@K, and saves the cleaned ratings, anime catalog, user-item and similarity matrices, metrics, and per-user rankings under `results/`.
+
+The evaluation has one relevant held-out anime per user, so Recall@K is whether that anime appears in the top K and NDCG@K rewards placing it nearer the top. The split is randomized rather than temporal because the common Kaggle ratings file has no timestamp. Similarity uses raw explicit ratings; it does not correct for individual rating-scale bias. The item cap and minimum-count filter also limit coverage to popular titles, so cold-start anime are not recommended.
+
+### Initial measured results
+
+The first run on Kaggle dataset version 1 used 4,097,576 cleaned ratings across 750 anime and evaluated 65,444 positive user holdouts. Item cosine achieved Recall@10 of `0.117337` and NDCG@10 of `0.066312`; a popularity-only baseline on the same holdouts scored `0.107527` and `0.054898`. The gain is modest. The current evaluation picks the first retained training item as the seed and checks whether it retrieves another item the user rated at least 7, so an unrelated seed can make recall look low. See `results/baseline_summary.md` for details and limitations.
