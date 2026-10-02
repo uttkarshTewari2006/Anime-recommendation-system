@@ -74,7 +74,7 @@ Why this was chosen:
 ---
 
 ## Current project scope
-This repository currently targets a strong, explainable, and realistic baseline based on item-based collaborative filtering. It is not intended to be a production-scale recommendation platform yet, but it provides a credible foundation for future upgrades such as metadata-aware reranking, matrix factorization, or hybrid recommendation systems.
+This repository provides an explainable item-based collaborative recommender with positive-history scoring and a genre-aware reranker. The tested catalog is intentionally limited to popular anime; cold-start items and production-scale serving are out of scope.
 
 ---
 
@@ -97,8 +97,8 @@ The baseline implementation is in `anime_recommender.py`, with an experiment wor
 Install the dependencies, then download the MyAnimeList anime ratings dataset with KaggleHub:
 
 ```powershell
-py -m pip install -r requirements.txt
-py -c "import kagglehub; path = kagglehub.dataset_download('CooperUnion/anime-recommendations-database'); print('Path to dataset files:', path)"
+python -m pip install -r requirements.txt
+python -c "import kagglehub; path = kagglehub.dataset_download('CooperUnion/anime-recommendations-database'); print('Path to dataset files:', path)"
 ```
 
 Copy these downloaded files into the project `data/` folder:
@@ -110,17 +110,40 @@ Ratings outside 1-10, including MyAnimeList's `-1` unrated marker, are removed. 
 
 ### Run
 
-Run the focused tests:
+Install dependencies and run the test suite:
 
 ```powershell
-py -m pip install -r requirements.txt
-py -m unittest discover -s tests -v
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
 ```
 
-Open and run `notebooks/anime_item_cf.ipynb` from top to bottom. It creates a reproducible user-aware holdout by selecting one rating of at least 7 per eligible user, computes sparse item-item cosine similarity, reports Recall@K and NDCG@K, and saves the cleaned ratings, anime catalog, user-item and similarity matrices, metrics, and per-user rankings under `results/`.
+Run the complete Day 3 comparison from the repository root:
 
-The evaluation has one relevant held-out anime per user, so Recall@K is whether that anime appears in the top K and NDCG@K rewards placing it nearer the top. The split is randomized rather than temporal because the common Kaggle ratings file has no timestamp. Similarity uses raw explicit ratings; it does not correct for individual rating-scale bias. The item cap and minimum-count filter also limit coverage to popular titles, so cold-start anime are not recommended.
+```powershell
+python run_evaluation.py
+```
 
-### Evaluation status
+The notebook at `notebooks/anime_item_cf.ipynb` runs the same script. The evaluation creates disjoint validation and test positives for the same eligible users. It tunes the genre weight on validation, then compares the original single-seed cosine baseline, positive-history cosine, the genre hybrid, and popularity on the untouched test split. Previously rated anime are excluded from candidates. The default user-facing recommendation functions use the validation-selected genre weight of 0.10.
 
-Quantitative results are omitted until the relevance baseline and evaluation protocol are refined.
+The evaluation has one relevant held-out anime per user, so Recall@K is whether that anime appears in the top K and NDCG@K rewards placing it nearer the top. The split is randomized rather than temporal because the common Kaggle ratings file has no timestamp. Similarity uses raw explicit ratings; it does not correct for individual rating-scale bias. The item cap and minimum-count filter limit coverage to popular titles, so cold-start anime are not recommended.
+
+### Day 3 results
+
+On the 62,743-user final test split, the genre hybrid improves Recall@10 by 0.007124 and NDCG@10 by 0.002764 over full positive-history cosine. The largest gain comes from aggregating a user's positive history rather than relying on the original single seed.
+
+| Model | Genre weight | Recall@10 | NDCG@10 |
+|---|---:|---:|---:|
+| Original single-seed cosine | 0.00 | 0.138517 | 0.078878 |
+| Positive-history cosine | 0.00 | 0.262738 | 0.158557 |
+| Genre hybrid | 0.10 | 0.269863 | 0.161320 |
+| Popularity | 0.00 | 0.136701 | 0.073877 |
+
+The validation search selected genre weight 0.10 from weights 0.00, 0.05, 0.10, 0.20, 0.35, and 0.50. Detailed validation metrics, per-user test rankings, and a run summary are saved as `results/day3_validation_metrics.csv`, `results/day3_metrics.csv`, `results/day3_user_rankings.csv`, and `results/day3_summary.md`. Day 2 artifacts remain separate under their original `baseline_*` names.
+
+Day 3 scores are not a direct replay of the historical Day 2 metrics: this comparison uses disjoint validation/test positives, requires positive training history, and excludes all already-rated titles for every model. It is an offline randomized holdout, not evidence of online user satisfaction. The single-target-per-user protocol measures retrieval of one known positive and does not measure multiple relevant results or temporal preference changes. See `results/day3_summary.md` for the full configuration and interpretation.
+
+### Next steps
+
+- Repeat the evaluation across several random seeds and report metric variability.
+- Expand the working catalog and stratify Recall@10 by item popularity to measure long-tail coverage.
+- Add temporal or online evaluation when timestamped interactions or feedback become available.

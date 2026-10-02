@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 from anime_recommender import (
     build_similarity_model,
@@ -10,8 +11,11 @@ from anime_recommender import (
     evaluate_popularity_holdout,
     load_dataset,
     recommend_for_anime,
+    recommend_from_history,
     split_user_holdout,
 )
+from run_evaluation import split_validation_test
+from run_protocol1_evaluation import evaluate_seed_target_pairs, make_seed_target_pairs
 
 
 class AnimeRecommenderTests(unittest.TestCase):
@@ -20,6 +24,7 @@ class AnimeRecommenderTests(unittest.TestCase):
             {
                 "anime_id": [1, 2, 3, 4],
                 "title": ["Alpha", "Beta", "Gamma", "Delta"],
+                "genre": ["Action, Fantasy", "Action", "Action, Fantasy", "Sports"],
             }
         )
         self.ratings = pd.DataFrame(
@@ -57,6 +62,49 @@ class AnimeRecommenderTests(unittest.TestCase):
         self.assertNotIn("Alpha", [result["title"] for result in recommendations])
         self.assertGreaterEqual(recommendations[0]["similarity"], recommendations[1]["similarity"])
 
+    def test_model_uses_genres_from_ratings_without_explicit_catalog(self):
+        model = build_similarity_model(self.ratings)
+
+        self.assertIsNotNone(model.genre_similarities)
+
+    def test_history_recommendations_sum_similarities_and_exclude_seen_items(self):
+        model = build_similarity_model(self.ratings, self.catalog)
+        model.similarities = csr_matrix(
+            [
+                [1.0, 0.0, 0.6, 0.9],
+                [0.0, 1.0, 0.6, 0.0],
+                [0.6, 0.6, 1.0, 0.0],
+                [0.9, 0.9, 0.0, 1.0],
+            ]
+        )
+        history = self.ratings[
+            (self.ratings["user_id"] == "u1") & self.ratings["anime_id"].isin([1, 2])
+        ]
+
+        recommendations = recommend_from_history(model, history, k=2, genre_weight=0.0)
+
+        self.assertEqual(recommendations[0]["anime_id"], 3)
+        self.assertAlmostEqual(recommendations[0]["similarity"], 1.2)
+        self.assertNotIn(1, [result["anime_id"] for result in recommendations])
+        self.assertNotIn(2, [result["anime_id"] for result in recommendations])
+
+    def test_genre_blend_reranks_collaborative_candidates(self):
+        model = build_similarity_model(self.ratings, self.catalog)
+        model.similarities = csr_matrix(
+            [
+                [1.0, 0.9, 0.7, 0.0],
+                [0.9, 1.0, 0.0, 0.0],
+                [0.7, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+
+        baseline = recommend_for_anime(model, "Alpha", k=2)
+        hybrid = recommend_for_anime(model, "Alpha", k=2, genre_weight=0.5)
+
+        self.assertEqual(baseline[0]["anime_id"], 2)
+        self.assertEqual(hybrid[0]["anime_id"], 3)
+
     def test_holdout_evaluation_is_bounded(self):
         train, test = split_user_holdout(self.ratings, random_state=7)
         model = build_similarity_model(train, self.catalog)
@@ -71,6 +119,30 @@ class AnimeRecommenderTests(unittest.TestCase):
         self.assertLessEqual(metrics["ndcg@2"], 1.0)
         self.assertEqual(len(details), 4)
 
+    def test_history_evaluation_recovers_target_missed_by_first_seed(self):
+        model = build_similarity_model(self.ratings, self.catalog)
+        model.similarities = csr_matrix(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.8, 0.0],
+                [0.0, 0.8, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+        train = self.ratings[
+            (self.ratings["user_id"] == "u1") & self.ratings["anime_id"].isin([1, 2])
+        ].reset_index(drop=True)
+        test = self.ratings[
+            (self.ratings["user_id"] == "u1") & (self.ratings["anime_id"] == 3)
+        ].reset_index(drop=True)
+        test.loc[:, "rating"] = 8
+
+        full_history, _ = evaluate_holdout(model, train, test, k=1)
+        first_seed, _ = evaluate_holdout(model, train, test, k=1, use_all_history=False)
+
+        self.assertEqual(full_history["recall@1"], 1.0)
+        self.assertEqual(first_seed["recall@1"], 0.0)
+
     def test_popularity_baseline_uses_same_holdout_users(self):
         train, test = split_user_holdout(self.ratings, random_state=7)
         metrics, details = evaluate_popularity_holdout(train, test, k=2)
@@ -81,6 +153,41 @@ class AnimeRecommenderTests(unittest.TestCase):
         self.assertLessEqual(metrics["recall@2"], 1.0)
         self.assertGreaterEqual(metrics["ndcg@2"], 0.0)
         self.assertLessEqual(metrics["ndcg@2"], 1.0)
+
+    def test_validation_and_test_splits_are_disjoint(self):
+        ratings = self.ratings.copy()
+        ratings["rating"] = 8
+        train, validation, test = split_validation_test(ratings)
+        validation_pairs = set(zip(validation["user_id"], validation["anime_id"]))
+        test_pairs = set(zip(test["user_id"], test["anime_id"]))
+
+        self.assertFalse(validation_pairs & test_pairs)
+        self.assertEqual(set(validation["user_id"]), set(test["user_id"]))
+        self.assertTrue(train.groupby("user_id")["rating"].max().ge(7).all())
+
+    def test_positive_seed_target_pairs_score_known_neighbors(self):
+        train = self.ratings[
+            (self.ratings["user_id"] == "u1") & self.ratings["anime_id"].isin([1, 2])
+        ].reset_index(drop=True)
+        test = self.ratings[
+            (self.ratings["user_id"] == "u1") & (self.ratings["anime_id"] == 3)
+        ].reset_index(drop=True)
+        test.loc[:, "rating"] = 8
+        model = build_similarity_model(train, self.catalog)
+        model.similarities = csr_matrix(
+            [
+                [1.0, 0.0, 0.8, 0.0],
+                [0.0, 1.0, 0.8, 0.0],
+                [0.8, 0.8, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+
+        pairs = make_seed_target_pairs(train, test, random_state=1, max_seeds_per_user=2)
+        scored = evaluate_seed_target_pairs(model, train, pairs, k=1)
+
+        self.assertEqual(len(pairs), 2)
+        self.assertEqual(scored["cf_recall_at_k"].tolist(), [1, 1])
 
 
 if __name__ == "__main__":

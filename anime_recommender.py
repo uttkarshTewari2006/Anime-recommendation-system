@@ -8,6 +8,9 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import MultiLabelBinarizer
+
+DEFAULT_GENRE_WEIGHT = 0.1
 
 
 @dataclass
@@ -19,6 +22,7 @@ class ItemSimilarityModel:
     user_item_matrix: csr_matrix
     similarities: csr_matrix
     id_to_index: dict[int, int]
+    genre_similarities: csr_matrix | None = None
 
 
 def load_dataset(
@@ -125,9 +129,15 @@ def build_similarity_model(
         raise ValueError("train_ratings must contain at least one interaction")
 
     if catalog is None:
-        catalog = train_ratings[["anime_id", "title"]].drop_duplicates("anime_id")
+        catalog_columns = ["anime_id", "title"]
+        if "genre" in train_ratings.columns:
+            catalog_columns.append("genre")
+        catalog = train_ratings[catalog_columns].drop_duplicates("anime_id")
     else:
-        catalog = catalog[["anime_id", "title"]].drop_duplicates("anime_id")
+        catalog_columns = ["anime_id", "title"]
+        if "genre" in catalog.columns:
+            catalog_columns.append("genre")
+        catalog = catalog[catalog_columns].drop_duplicates("anime_id")
 
     anime_ids = catalog["anime_id"].astype(int).tolist()
     id_to_index = {anime_id: index for index, anime_id in enumerate(anime_ids)}
@@ -140,6 +150,15 @@ def build_similarity_model(
     )
     item_user = user_item.T.tocsr()
     similarities = csr_matrix(cosine_similarity(item_user, dense_output=False))
+
+    genre_similarities = None
+    if "genre" in catalog.columns:
+        genres = catalog["genre"].fillna("").astype(str).map(
+            lambda value: [genre.strip().casefold() for genre in value.split(",") if genre.strip()]
+        )
+        genre_matrix = csr_matrix(MultiLabelBinarizer().fit_transform(genres))
+        if genre_matrix.shape[1]:
+            genre_similarities = csr_matrix(cosine_similarity(genre_matrix, dense_output=False))
 
     titles = dict(zip(catalog["anime_id"].astype(int), catalog["title"].astype(str)))
     title_to_ids: dict[str, list[int]] = {}
@@ -154,7 +173,88 @@ def build_similarity_model(
         user_item_matrix=user_item,
         similarities=similarities,
         id_to_index=id_to_index,
+        genre_similarities=genre_similarities,
     )
+
+
+def _scores_from_sources(
+    model: ItemSimilarityModel,
+    source_ids: list[int],
+    *,
+    include_genres: bool,
+) -> tuple[np.ndarray, np.ndarray]:
+    collaborative_scores = np.zeros(len(model.anime_ids), dtype=float)
+    genre_scores = np.zeros(len(model.anime_ids), dtype=float)
+    for anime_id in source_ids:
+        source_index = model.id_to_index.get(anime_id)
+        if source_index is None:
+            continue
+        row = model.similarities.getrow(source_index)
+        collaborative_scores[row.indices] += row.data
+        if include_genres and model.genre_similarities is not None:
+            genre_row = model.genre_similarities.getrow(source_index)
+            genre_scores[genre_row.indices] += genre_row.data
+    return collaborative_scores, genre_scores
+
+
+def _combined_scores(
+    model: ItemSimilarityModel,
+    source_ids: list[int],
+    genre_weight: float,
+) -> np.ndarray:
+    if not np.isfinite(genre_weight) or not 0 <= genre_weight <= 1:
+        raise ValueError("genre_weight must be between 0 and 1")
+    collaborative_scores, genre_scores = _scores_from_sources(
+        model, source_ids, include_genres=genre_weight > 0
+    )
+
+    if genre_weight and genre_scores.max() > 0 and collaborative_scores.max() > 0:
+        return (
+            (1 - genre_weight) * collaborative_scores / collaborative_scores.max()
+            + genre_weight * genre_scores / genre_scores.max()
+        )
+    if genre_scores.max() > 0 and collaborative_scores.max() == 0:
+        return genre_scores
+    return collaborative_scores
+
+
+def _recommend_from_sources(
+    model: ItemSimilarityModel,
+    source_ids: list[int],
+    *,
+    k: int,
+    exclude_ids: set[int],
+    genre_weight: float,
+) -> list[dict[str, Any]]:
+    if k < 1:
+        raise ValueError("k must be at least 1")
+    scores = _combined_scores(model, source_ids, genre_weight)
+
+    candidate_indices = np.flatnonzero(scores > 0)
+    for anime_id in exclude_ids:
+        index = model.id_to_index.get(anime_id)
+        if index is not None:
+            candidate_indices = candidate_indices[candidate_indices != index]
+    if len(candidate_indices) > k:
+        cutoff = np.partition(scores[candidate_indices], -k)[-k]
+        above_cutoff = candidate_indices[scores[candidate_indices] > cutoff]
+        tied_at_cutoff = candidate_indices[scores[candidate_indices] == cutoff]
+        tie_order = np.argsort(np.asarray(model.anime_ids)[tied_at_cutoff])
+        candidate_indices = np.concatenate(
+            [above_cutoff, tied_at_cutoff[tie_order[: k - len(above_cutoff)]]]
+        )
+    ranked_indices = sorted(
+        candidate_indices.tolist(),
+        key=lambda index: (-scores[index], model.anime_ids[index]),
+    )
+    return [
+        {
+            "anime_id": model.anime_ids[index],
+            "title": model.titles[model.anime_ids[index]],
+            "similarity": float(scores[index]),
+        }
+        for index in ranked_indices
+    ]
 
 
 def recommend_for_anime(
@@ -163,30 +263,52 @@ def recommend_for_anime(
     *,
     k: int = 10,
     exclude_ids: set[int] | None = None,
+    genre_weight: float = DEFAULT_GENRE_WEIGHT,
 ) -> list[dict[str, Any]]:
     """Return the highest-similarity anime for an exact title match."""
     if k < 1:
         raise ValueError("k must be at least 1")
+    if not np.isfinite(genre_weight) or not 0 <= genre_weight <= 1:
+        raise ValueError("genre_weight must be between 0 and 1")
     matches = model.title_to_ids.get(title.strip().casefold(), [])
     if not matches:
         raise KeyError(f"Anime title not found: {title}")
 
     source_id = matches[0]
-    source_index = model.id_to_index[source_id]
-    row = model.similarities.getrow(source_index)
     excluded = set(exclude_ids or ()) | {source_id}
-    ranked = sorted(
-        (
-            (model.anime_ids[index], float(score))
-            for index, score in zip(row.indices, row.data)
-            if model.anime_ids[index] not in excluded
-        ),
-        key=lambda item: (-item[1], item[0]),
-    )[:k]
-    return [
-        {"anime_id": anime_id, "title": model.titles[anime_id], "similarity": score}
-        for anime_id, score in ranked
-    ]
+    return _recommend_from_sources(
+        model,
+        [source_id],
+        k=k,
+        exclude_ids=excluded,
+        genre_weight=genre_weight,
+    )
+
+
+def recommend_from_history(
+    model: ItemSimilarityModel,
+    user_history: pd.DataFrame,
+    *,
+    k: int = 10,
+    relevance_threshold: float = 7,
+    genre_weight: float = DEFAULT_GENRE_WEIGHT,
+) -> list[dict[str, Any]]:
+    """Rank unseen anime by summed similarity to positively rated history."""
+    if k < 1:
+        raise ValueError("k must be at least 1")
+    if not np.isfinite(genre_weight) or not 0 <= genre_weight <= 1:
+        raise ValueError("genre_weight must be between 0 and 1")
+    positive_history = user_history[user_history["rating"] >= relevance_threshold]
+    if positive_history.empty:
+        return []
+
+    return _recommend_from_sources(
+        model,
+        positive_history["anime_id"].astype(int).tolist(),
+        k=k,
+        exclude_ids=set(user_history["anime_id"].astype(int)),
+        genre_weight=genre_weight,
+    )
 
 
 def evaluate_holdout(
@@ -195,35 +317,103 @@ def evaluate_holdout(
     test_ratings: pd.DataFrame,
     *,
     k: int = 10,
+    genre_weight: float = 0.0,
+    use_all_history: bool = True,
 ) -> tuple[dict[str, float | int], pd.DataFrame]:
-    """Evaluate one seeded item recommendation per held-out user interaction."""
+    """Evaluate history-based recommendations with batched sparse scoring."""
     if k < 1:
         raise ValueError("k must be at least 1")
 
-    train_by_user = {user_id: group for user_id, group in train_ratings.groupby("user_id", sort=False)}
+    known_train = train_ratings[
+        train_ratings["anime_id"].isin(model.id_to_index)
+    ].drop_duplicates(["user_id", "anime_id"], keep="first")
+    user_ids = pd.unique(known_train["user_id"])
+    user_to_row = {user_id: row for row, user_id in enumerate(user_ids)}
+    row_indices = known_train["user_id"].map(user_to_row).to_numpy(dtype=np.int32)
+    column_indices = known_train["anime_id"].map(model.id_to_index).to_numpy(dtype=np.int32)
+    shape = (len(user_ids), len(model.anime_ids))
+    seen_matrix = csr_matrix(
+        (np.ones(len(known_train), dtype=np.float32), (row_indices, column_indices)),
+        shape=shape,
+    )
+
+    positive_train = known_train[known_train["rating"] >= 7]
+    first_train = known_train.drop_duplicates("user_id", keep="first")
+    source_records = positive_train if use_all_history else first_train
+    seed_records = (
+        positive_train.drop_duplicates("user_id", keep="first")
+        if use_all_history
+        else first_train
+    )
+    source_rows = source_records["user_id"].map(user_to_row).to_numpy(dtype=np.int32)
+    source_columns = source_records["anime_id"].map(model.id_to_index).to_numpy(dtype=np.int32)
+    source_matrix = csr_matrix(
+        (np.ones(len(source_records), dtype=np.float32), (source_rows, source_columns)),
+        shape=shape,
+    )
+
+    known_test = test_ratings[
+        test_ratings["user_id"].isin(user_to_row)
+        & test_ratings["anime_id"].isin(model.id_to_index)
+    ].reset_index(drop=True)
+    test_user_rows = known_test["user_id"].map(user_to_row).to_numpy(dtype=np.int32)
+    target_indices = known_test["anime_id"].map(model.id_to_index).to_numpy(dtype=np.int32)
+    seed_titles = seed_records.set_index("user_id")["title"].to_dict()
+    fallback_titles = (
+        known_train.drop_duplicates("user_id").set_index("user_id")["title"].to_dict()
+    )
+    anime_ids = np.asarray(model.anime_ids)
     rows: list[dict[str, Any]] = []
-    for held_out in test_ratings.itertuples(index=False):
-        user_history = train_by_user.get(held_out.user_id)
-        if user_history is None or user_history.empty:
-            continue
-        seed = user_history.iloc[0]
-        recommendations = recommend_for_anime(model, seed.title, k=k)
-        recommended_ids = [result["anime_id"] for result in recommendations]
-        relevant_id = int(str(held_out.anime_id))
-        try:
-            rank = recommended_ids.index(relevant_id) + 1
-        except ValueError:
-            rank = None
-        rows.append(
-            {
-                "user_id": held_out.user_id,
-                "seed_title": seed.title,
-                "held_out_title": held_out.title,
-                "rank": rank,
-                "recall_at_k": int(rank is not None),
-                "ndcg_at_k": 1.0 / np.log2(rank + 1) if rank is not None else 0.0,
-            }
-        )
+    batch_size = 512
+
+    for start in range(0, len(known_test), batch_size):
+        stop = min(start + batch_size, len(known_test))
+        user_rows = test_user_rows[start:stop]
+        scores = (source_matrix[user_rows] @ model.similarities).toarray()
+        if genre_weight and model.genre_similarities is not None:
+            genre_scores = (
+                source_matrix[user_rows] @ model.genre_similarities
+            ).toarray()
+            collaborative_max = scores.max(axis=1, keepdims=True)
+            genre_max = genre_scores.max(axis=1, keepdims=True)
+            both_available = (collaborative_max > 0) & (genre_max > 0)
+            blended = np.zeros_like(scores)
+            np.divide(scores, collaborative_max, out=blended, where=collaborative_max > 0)
+            blended *= 1 - genre_weight
+            normalized_genres = np.zeros_like(genre_scores)
+            np.divide(genre_scores, genre_max, out=normalized_genres, where=genre_max > 0)
+            blended += genre_weight * normalized_genres
+            scores = np.where(both_available, blended, scores)
+
+        for offset, test_row in enumerate(known_test.iloc[start:stop].itertuples(index=False)):
+            target_index = target_indices[start + offset]
+            candidate_mask = scores[offset] > 0
+            seen_indices = seen_matrix.indices[
+                seen_matrix.indptr[user_rows[offset]] : seen_matrix.indptr[user_rows[offset] + 1]
+            ]
+            candidate_mask[seen_indices] = False
+            target_score = scores[offset, target_index]
+            if not candidate_mask[target_index]:
+                rank = None
+            else:
+                precedes_target = (scores[offset] > target_score) | (
+                    (scores[offset] == target_score) & (anime_ids < int(test_row.anime_id))
+                )
+                rank = int(np.count_nonzero(candidate_mask & precedes_target) + 1)
+                if rank > k:
+                    rank = None
+            rows.append(
+                {
+                    "user_id": test_row.user_id,
+                    "seed_title": seed_titles.get(
+                        test_row.user_id, fallback_titles.get(test_row.user_id, "")
+                    ),
+                    "held_out_title": test_row.title,
+                    "rank": rank,
+                    "recall_at_k": int(rank is not None),
+                    "ndcg_at_k": 1.0 / np.log2(rank + 1) if rank is not None else 0.0,
+                }
+            )
 
     details = pd.DataFrame(rows)
     if details.empty:
@@ -259,8 +449,10 @@ def evaluate_popularity_holdout(
         user_history = train_by_user.get(held_out.user_id)
         if user_history is None or user_history.empty:
             continue
-        seed = user_history.iloc[0]
-        candidates = [anime_id for anime_id in popular_ids if anime_id != int(seed.anime_id)][:k]
+        positive_history = user_history[user_history["rating"] >= 7]
+        seed = positive_history.iloc[0] if not positive_history.empty else user_history.iloc[0]
+        seen_ids = set(user_history["anime_id"].astype(int))
+        candidates = [anime_id for anime_id in popular_ids if anime_id not in seen_ids][:k]
         relevant_id = int(str(held_out.anime_id))
         try:
             rank = candidates.index(relevant_id) + 1
